@@ -17,7 +17,7 @@ outer_iters = 4 # Number of times to increase the bond dimension
 N = 4# Number of sites in the unit cell
 J = 1.0
 J₂ = 0.0
-h = 1.0.;
+h = 1.0
 
 function spin_space_shift(q̃nf; pop_p::Int64 = 1, pop_m::Int64 = 1)
     return [QN("Sz", 1 * pop_m) => 1, QN("Sz", -1 * pop_p) => 1];

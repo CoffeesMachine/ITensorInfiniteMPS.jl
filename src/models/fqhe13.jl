@@ -64,7 +64,7 @@ function unit_cell_terms(
     #coeff[[1, 4, 3, 2]] = -1.0; coeff[[2, 3, 4, 1]] = -1.0;
     opt = optimize_coefficients(coeff; prec=prec)
     opt = filter_optimized_Hamiltonian_by_first_site(opt)
-    opt[["N", 1]] = -2.0
+    #opt[["N", 1]] = -2.0
     test = check_max_range_optimized_Hamiltonian(opt)
     if rough_N > test
       return generate_Hamiltonian(opt)
@@ -363,6 +363,10 @@ end
 function generate_Hamiltonian(coeff::Dict; global_factor=1, prec=1e-12)
   mpo = OpSum()
   return generate_Hamiltonian(mpo, coeff; global_factor=global_factor, prec=prec)
+end
+
+function mult_flux(qn::QN, multipliers)
+	return QN( [(qn[n].name, qn[n].val * multipliers[n], (abs(qn[n].modulus) == 1 ? 1 : multipliers[n]) * qn[n].modulus) for n in 1:length(multipliers)]... )
 end
 
 
