@@ -4,12 +4,6 @@
 function unit_cell_terms(::Model"fqhe_gen"; dict_coeffs = Dict{NTuple{4, Int64}, Number}())
   #we assume that dict_coeffs has already been filtered, and is ready to be used
   ops = generate_Hamiltonian(dict_coeffs)
-  #=
-  if L != -1
-    for j in 1:L
-      add!(ops, 0., "I", j)
-    end
-  end
-  =#
+
   return ops
 end
