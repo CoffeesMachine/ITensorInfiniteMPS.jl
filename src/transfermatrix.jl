@@ -16,13 +16,16 @@ end
 function TransferMatrix(ψ1::InfiniteMPS, ψ2::InfiniteMPS)
   c = Cell(1)
   @assert nsites(ψ1) == nsites(ψ2)
-  
+
   N = nsites(ψ1)
-  ψ1ᴴ = prime(linkinds, dag(ψ1))
+  ψᴴ = prime(linkinds, dag(ψ1))
   ψ2ᶜ = ψ2[c]
-  ψ1ᶜᴴ = ψ1ᴴ[c]
+  ψ1ᶜᴴ = ψᴴ[c]
+
   
-  r = unioninds(linkinds(ψ2, N => N + 1), linkinds(ψ1ᴴ, N => N + 1))
-  l = unioninds(linkinds(ψ2, 1 => 0), linkinds(ψ1ᴴ, 1 => 0))
-  return ITensorMap(ψ2ᶜ, ψ1ᶜᴴ; input_inds=r, output_inds=l)
+
+  r = unioninds(linkinds(ψ2, N => N+1), linkinds(ψᴴ, N => N+1))
+  l = unioninds(linkinds(ψ2, 1 => 0), linkinds(ψᴴ, 1 => 0))
+
+  return ITensorNetworkInfinite(ψ2ᶜ, ψ1ᶜᴴ; input_inds=r, output_inds=l, translator=translator(ψ1))
 end
