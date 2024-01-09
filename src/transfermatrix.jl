@@ -13,7 +13,7 @@ function TransferMatrix(ψ::InfiniteMPS, c::Cell)
 end
 
 
-function TransferMatrix(ψ1::InfiniteMPS, ψ2::InfiniteMPS)
+function TransferMatrix(ψ1::InfiniteMPS, ψ2::InfiniteMPS; direction=+1)
   c = Cell(1)
   @assert nsites(ψ1) == nsites(ψ2)
 
@@ -26,6 +26,6 @@ function TransferMatrix(ψ1::InfiniteMPS, ψ2::InfiniteMPS)
 
   r = unioninds(linkinds(ψ2, N => N+1), linkinds(ψᴴ, N => N+1))
   l = unioninds(linkinds(ψ2, 1 => 0), linkinds(ψᴴ, 1 => 0))
-
-  return ITensorNetworkInfinite(ψ2ᶜ, ψ1ᶜᴴ; input_inds=r, output_inds=l, translator=translator(ψ1))
+  
+  return ITensorNetworkInfinite(ψ2ᶜ, ψ1ᶜᴴ; input_inds=r, output_inds=l, translator=translator(ψ1), direction)
 end

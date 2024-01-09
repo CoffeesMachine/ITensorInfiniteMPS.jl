@@ -209,7 +209,8 @@ abstract type AbstractITensorNetworkInfinite end
 input_inds(T::AbstractITensorNetworkInfinite) = T.input_inds
 output_inds(T::AbstractITensorNetworkInfinite) = T.output_inds
 translator(T::AbstractITensorNetworkInfinite) = T.translator
-translator(T::AbstractITensorNetworkInfinite, V::Vector{Index}) = [translator(T)(i, 1) for i in V]
+direction(T::AbstractITensorNetworkInfinite) = T.direction
+translator(T::AbstractITensorNetworkInfinite, V::Vector{Index}) = [translator(T)(i, direction(T)) for i in V]
 (T::AbstractITensorNetworkInfinite)(v::ITensor) = replaceinds(T * v, translator(T, output_inds(T)) => input_inds(T))
 
 
@@ -222,17 +223,18 @@ struct ITensorNetworkInfinite <: AbstractITensorNetworkInfinite
   input_inds::Vector{Index}
   output_inds::Vector{Index}
   translator::Function
-  function ITensorNetworkInfinite(itensors::Vector{ITensor}, scalar, input_inds, output_inds, translator)
+  direction::Int64
+  function ITensorNetworkInfinite(itensors::Vector{ITensor}, scalar, input_inds, output_inds, translator, direction)
     inds_in = tuple_to_vector(input_inds)
     inds_out = tuple_to_vector(output_inds)
     #inds_eltype = promote_type(eltype(input_inds), eltype(output_inds))
     #return new{inds_eltype}(itensors, inds_in, inds_out)
-    return new(itensors, scalar, inds_in, inds_out, translator)
+    return new(itensors, scalar, inds_in, inds_out, translator, direction)
   end
 end
 
-function ITensorNetworkInfinite(itensors::Vector{ITensor}, input_inds, output_inds, translator)
-  return ITensorNetworkInfinite(itensors, true, input_inds, output_inds, translator)
+function ITensorNetworkInfinite(itensors::Vector{ITensor}, input_inds, output_inds, translator, direction)
+  return ITensorNetworkInfinite(itensors, true, input_inds, output_inds, translator, direction)
 end
 
 #TODO implementing multiplication and composition of the translators
@@ -249,15 +251,15 @@ end
 Base.iterate(T::ITensorNetworkInfinite, args...) = iterate(T.itensors, args...)
 
 function Base.transpose(T::ITensorNetworkInfinite)
-  return ITensorNetworkInfinite(reverse(T.itensors), output_inds(T), input_inds(T), translator(T))
+  return ITensorNetworkInfinite(reverse(T.itensors), output_inds(T), input_inds(T), translator(T), -1*direction(T))
 end
 
 function Base.adjoint(T::ITensorNetworkInfinite)
-  return ITensorNetworkInfinite(reverse(dag.(T.itensors)), dag(output_inds(T)), dag(input_inds(T)), translator(T))
+  return ITensorNetworkInfinite(reverse(dag.(T.itensors)), dag(output_inds(T)), dag(input_inds(T)), translator(T), -1*direction(T))
 end
 
 function set_scalar(T::ITensorNetworkInfinite, scalar::Number)
-  return ITensorNetworkInfinite(T.itensors, scalar, input_inds(T), output_inds(T), translator(T))
+  return ITensorNetworkInfinite(T.itensors, scalar, input_inds(T), output_inds(T), translator(T), direction(T))
 end
 
 # Lazily scale by a scalar
@@ -268,7 +270,7 @@ end
 
 # TODO: assert isempty(uniqeinds(v, T))?
 # Apply the operator as T|v⟩
-(T::ITensorNetworkInfinite * v::ITensor) = T.scalar * contract(pushfirst!(copy(T.itensors), translatecell(translator(T), v, 1))) #*(v, T...)
+(T::ITensorNetworkInfinite * v::ITensor) = T.scalar * contract(pushfirst!(copy(T.itensors), translatecell(translator(T), v, direction(T)))) #*(v, T...)
 # Apply the operator as ⟨v̅|T (simple left multiplication, without conjugation)
 # This applies the ITensorMap tensors in reverse (maybe this is not always the best contraction
 # ordering)
@@ -276,7 +278,7 @@ end
 
 
 # Transfer matrix made from two MPS: T|v⟩ -> |w⟩
-function ITensorNetworkInfinite(ψ::MPS, ϕ::MPS; input_inds=nothing, output_inds=nothing, translator=nothing)
+function ITensorNetworkInfinite(ψ::MPS, ϕ::MPS; input_inds=nothing, output_inds=nothing, translator=nothing, direction=1)
   N = length(ψ)
   @assert length(ϕ) == N
   itensors::Vector{ITensor} = reverse(collect(Iterators.flatten(Iterators.zip(ψ, ϕ))))
@@ -288,5 +290,5 @@ function ITensorNetworkInfinite(ψ::MPS, ϕ::MPS; input_inds=nothing, output_ind
   if isnothing(output_inds)
     output_inds = unioninds(uniqueinds(ψ[1], ψ[2], ϕ[1]), uniqueinds(ϕ[1], ϕ[2], ψ[1]))
   end
-  return ITensorNetworkInfinite(itensors, input_inds, output_inds, translator)
+  return ITensorNetworkInfinite(itensors, input_inds, output_inds, translator, direction)
 end
