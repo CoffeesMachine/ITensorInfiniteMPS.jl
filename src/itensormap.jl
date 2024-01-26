@@ -274,7 +274,7 @@ end
 # Apply the operator as ⟨v̅|T (simple left multiplication, without conjugation)
 # This applies the ITensorMap tensors in reverse (maybe this is not always the best contraction
 # ordering)
-(v::ITensor * T::ITensorNetworkInfinite) = T.scalar * contract(pushfirst!(reverse(T.itensors, v))) #*(v, reverse(T)...)
+(v::ITensor * T::ITensorNetworkInfinite) = T.scalar * contract(pushfirst!(reverse(T.itensors), v)) #*(v, reverse(T)...)
 
 
 # Transfer matrix made from two MPS: T|v⟩ -> |w⟩
