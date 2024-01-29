@@ -125,7 +125,7 @@ function expectationUnitCell(ψⁱ::InfiniteCanonicalMPS, NameOp::AbstractString
   
   
   UnitCell = Array{Any}(undef, nsites(ψⁱ)) 
-  s = [inds(ψⁱ[j])[2] for j=1:4]
+  s = [inds(ψⁱ[j])[2] for j=1:nsites(ψⁱ)]
   
   baseR = (ψⁱ.C[nsites(ψⁱ)]*R)*dag(ψⁱ.C[nsites(ψⁱ)])'
   normpsi2 = (Contract(copy(ψⁱ.AL), L)*baseR)[]
@@ -156,7 +156,7 @@ function expectationUnitCell(ψⁱ::InfiniteCanonicalMPS, NameOp::AbstractString
 end
 
 
-function ITensors.correlation_matrix(psi::InfiniteCanonicalMPS, OP1::AbstractString, OP2::AbstractString; Neigen=10, sites::AbstractRange=1:nsites(psi), returnEl = false)
+function ITensors.correlation_matrix(psi::InfiniteCanonicalMPS, OP1::AbstractString, OP2::AbstractString; sites::AbstractRange=1:nsites(psi))
   Ns = nsites(psi)
   
   
@@ -169,16 +169,16 @@ function ITensors.correlation_matrix(psi::InfiniteCanonicalMPS, OP1::AbstractStr
   
   CorrelationMatrix = zeros(length(sites), length(sites))
   
-  for i in sites
+  for i in eachindex(sites)
     Cell_i = UnitCell(i)+1
     pos_i = mod(i-1, Ns)+1
-    for j in sites
+    for j in eachindex(sites)
       j < i && continue
       Cell_j = UnitCell(j)+1
       pos_j = mod(j-1, Ns)+1 
 
-      CorrelationMatrix[i-first(sites)+1,j-first(sites)+1] = C[pos_i, pos_j + Ns*abs(Cell_i-Cell_j)]
-      CorrelationMatrix[j-first(sites)+1,i-first(sites)+1] = CorrelationMatrix[i-first(sites)+1,j-first(sites)+1]
+      CorrelationMatrix[i, j] = C[pos_i, pos_j + Ns*abs(Cell_i-Cell_j)]
+      CorrelationMatrix[j, i] = CorrelationMatrix[i, j]
     end
   end
 
@@ -197,7 +197,8 @@ function correlationElement(ψ::InfiniteCanonicalMPS, OP1::AbstractString, OP2::
   C = zeros(Ns, length(sites))
   lastCell = div(length(sites)-1, Ns) + 1
   L_corr = ceil(-Ns/log(abs(λ)))
-  @show L_corr
+  println("Estimation of correlation length : $L_corr")
+  flush(stdout)
 
   #Calulate the siteinds 
   s = [inds(psi[i])[2] for i=1:Ns]
@@ -272,9 +273,7 @@ function correlationElement(ψ::InfiniteCanonicalMPS, OP1::AbstractString, OP2::
       L_loc = copy(baseL2)
       nL = copy(normLeft)
       for cell in 2:lastCell
-        
         shift = Ns*(cell-1)
-
         if n_j + shift > 10*L_corr
           C[n_i, n_j + shift] = Exp[n_i]*Exp[n_j]
           continue
